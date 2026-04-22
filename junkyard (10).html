@@ -1,0 +1,1419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>JunkYard Pro</title>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
+
+  :root {
+    --bg: #0d0d0d;
+    --surface: #161616;
+    --surface2: #1f1f1f;
+    --border: #2a2a2a;
+    --accent: #f0a500;
+    --accent2: #e05c00;
+    --text: #e8e8e8;
+    --text2: #888;
+    --danger: #e03c3c;
+    --success: #3ce07a;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Sans', sans-serif;
+    min-height: 100vh;
+    padding-bottom: 80px;
+  }
+
+  header {
+    background: var(--surface);
+    border-bottom: 2px solid var(--accent);
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  header .logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 26px;
+    letter-spacing: 2px;
+    color: var(--accent);
+    line-height: 1;
+  }
+
+  header .logo span { color: var(--text2); }
+
+  .badge {
+    background: var(--accent2);
+    color: #fff;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-weight: 600;
+    letter-spacing: 1px;
+  }
+
+  .db-count {
+    margin-left: auto;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--text2);
+  }
+
+  .db-count span { color: var(--accent); font-weight: 600; }
+
+  /* TABS */
+  .tabs {
+    display: flex;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 16px;
+  }
+
+  .tab {
+    padding: 12px 16px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    color: var(--text2);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+    text-transform: uppercase;
+  }
+
+  .tab.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+
+  /* PAGES */
+  .page { display: none; padding: 16px; }
+  .page.active { display: block; }
+
+  /* SEARCH PAGE */
+  .search-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+
+  .search-box label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--accent);
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: 8px;
+  }
+
+  .search-row {
+    display: flex;
+    gap: 8px;
+  }
+
+  input[type="text"], textarea, select {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 15px;
+    padding: 10px 12px;
+    border-radius: 6px;
+    outline: none;
+    width: 100%;
+    transition: border-color 0.2s;
+  }
+
+  input[type="text"]:focus, textarea:focus {
+    border-color: var(--accent);
+  }
+
+  textarea {
+    resize: none;
+    font-size: 13px;
+    min-height: 80px;
+  }
+
+  .btn {
+    background: var(--accent);
+    color: #000;
+    border: none;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    padding: 10px 18px;
+    border-radius: 6px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .btn:active { transform: scale(0.97); }
+
+  .btn.secondary {
+    background: var(--surface2);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+
+  .btn.danger {
+    background: var(--danger);
+    color: #fff;
+  }
+
+  .btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  /* RESULTS */
+  .result-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 8px;
+    padding: 14px;
+    margin-bottom: 10px;
+  }
+
+  .result-card .car-name {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 18px;
+    color: var(--accent);
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+  }
+
+  .parts-list { list-style: none; }
+
+  .parts-list li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 7px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 14px;
+    gap: 8px;
+  }
+
+  .parts-list li:last-child { border-bottom: none; }
+
+  .part-name { flex: 1; }
+
+  .part-price {
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+    color: var(--success);
+    font-size: 13px;
+    white-space: nowrap;
+  }
+
+  .part-note {
+    font-size: 11px;
+    color: var(--text2);
+    margin-top: 2px;
+  }
+
+  /* AI RESPONSE */
+  .ai-response {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent2);
+    border-radius: 8px;
+    padding: 14px;
+    margin-bottom: 10px;
+    font-size: 14px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+  }
+
+  .ai-thinking {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px;
+    background: var(--surface);
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    margin-bottom: 10px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--text2);
+  }
+
+  .spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    flex-shrink: 0;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* UPLOAD PAGE */
+  .upload-area {
+    background: var(--surface);
+    border: 2px dashed var(--border);
+    border-radius: 10px;
+    padding: 28px 16px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.2s;
+    margin-bottom: 16px;
+  }
+
+  .upload-area:active, .upload-area.dragover {
+    border-color: var(--accent);
+  }
+
+  .upload-area .upload-icon { font-size: 36px; margin-bottom: 8px; }
+
+  .upload-area p {
+    color: var(--text2);
+    font-size: 13px;
+    margin-bottom: 10px;
+  }
+
+  #fileInput { display: none; }
+
+  .queue-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .queue-item .thumb {
+    width: 44px;
+    height: 44px;
+    object-fit: cover;
+    border-radius: 4px;
+    flex-shrink: 0;
+  }
+
+  .queue-item .info { flex: 1; min-width: 0; }
+
+  .queue-item .filename {
+    font-size: 12px;
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--text2);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .queue-item .status {
+    font-size: 12px;
+    margin-top: 2px;
+  }
+
+  .status-pending { color: var(--text2); }
+  .status-processing { color: var(--accent); }
+  .status-done { color: var(--success); }
+  .status-error { color: var(--danger); }
+
+  /* DB PAGE */
+  .db-entry {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 8px;
+    overflow: hidden;
+  }
+
+  .db-entry-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 14px;
+    cursor: pointer;
+    gap: 8px;
+  }
+
+  .db-entry-header .car {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 17px;
+    color: var(--accent);
+    letter-spacing: 1px;
+  }
+
+  .db-entry-header .meta {
+    font-size: 11px;
+    color: var(--text2);
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  .db-entry-body {
+    display: none;
+    padding: 0 14px 12px;
+    border-top: 1px solid var(--border);
+  }
+
+  .db-entry-body.open { display: block; }
+
+  .db-entry-body .part-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    gap: 8px;
+  }
+
+  .db-entry-body .part-row:last-child { border-bottom: none; }
+
+  .delete-btn {
+    background: none;
+    border: none;
+    color: var(--danger);
+    font-size: 16px;
+    cursor: pointer;
+    padding: 4px;
+    flex-shrink: 0;
+  }
+
+  /* SETTINGS PAGE */
+  .settings-block {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 12px;
+  }
+
+  .settings-block h3 {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  .settings-block p {
+    font-size: 13px;
+    color: var(--text2);
+    margin-bottom: 10px;
+    line-height: 1.5;
+  }
+
+  .key-display {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--success);
+    margin-top: 6px;
+  }
+
+  /* EMPTY STATE */
+  .empty {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text2);
+    font-size: 14px;
+  }
+
+  .empty .icon { font-size: 40px; margin-bottom: 10px; }
+
+  /* SECTION TITLE */
+  .section-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--text2);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    margin-top: 4px;
+  }
+
+  .info-bar {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-size: 12px;
+    color: var(--text2);
+    margin-bottom: 12px;
+    line-height: 1.4;
+  }
+
+  .info-bar strong { color: var(--accent); }
+
+  /* PROGRESS */
+  .progress-bar {
+    background: var(--border);
+    border-radius: 3px;
+    height: 4px;
+    margin-top: 6px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    background: var(--accent);
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.3s;
+  }
+
+  .filter-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .filter-row input {
+    font-size: 13px;
+    padding: 8px 10px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Junk<span>Yard</span> Pro</div>
+  <div class="badge">AI</div>
+  <div class="db-count">База: <span id="totalCount">0</span> машин</div>
+</header>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('search')">🔍 Поиск</div>
+  <div class="tab" onclick="switchTab('upload')">📸 Загрузка</div>
+  <div class="tab" onclick="switchTab('db')">📦 База</div>
+  <div class="tab" onclick="switchTab('settings')">⚙️ API</div>
+</div>
+
+<!-- SEARCH -->
+<div class="page active" id="page-search">
+  <div class="search-box">
+    <label>Введи машину или сфотографируй</label>
+    <div class="search-row">
+      <input type="text" id="carQuery" placeholder="Honda Accord 2008..." />
+      <button class="btn" onclick="searchCar()">GO</button>
+    </div>
+    <div style="margin-top:10px">
+      <button class="btn secondary" style="width:100%;font-size:13px" onclick="document.getElementById('carPhotoInput').click()">
+        📷 Сфотографировать машину
+      </button>
+      <input type="file" id="carPhotoInput" accept="image/*" capture="environment" style="display:none" onchange="searchByPhoto(this)">
+    </div>
+    <div id="photoPreview" style="display:none;margin-top:10px">
+      <img id="photoImg" style="width:100%;border-radius:8px;max-height:180px;object-fit:cover">
+      <div id="photoStatus" style="font-size:12px;color:var(--text2);margin-top:6px;font-family:'IBM Plex Mono',monospace"></div>
+    </div>
+  </div>
+  <div id="searchResults"></div>
+</div>
+
+<!-- UPLOAD -->
+<div class="page" id="page-upload">
+
+  <!-- MANUAL ENTRY -->
+  <div class="section-title">✏️ Добавить вручную</div>
+  <div class="search-box" style="margin-bottom:16px">
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <input type="text" id="manualCar" placeholder="Машина: Honda Accord 2008" />
+      <input type="text" id="manualPart" placeholder="Запчасть: Radio Bezel" />
+      <input type="text" id="manualPrice" placeholder="Цена: $79-119" />
+      <input type="text" id="manualNote" placeholder="Заметка (необязательно)" />
+      <div id="manualImgPreview" style="display:none;margin-top:4px">
+        <img id="manualImgThumb" style="width:100%;border-radius:6px;max-height:150px;object-fit:cover">
+      </div>
+      <button class="btn secondary" style="width:100%" onclick="document.getElementById('manualImgInput').click()">📷 Прикрепить фото (необязательно)</button>
+      <input type="file" id="manualImgInput" accept="image/*" style="display:none" onchange="previewManualImg(this)">
+      <button class="btn" style="width:100%;font-size:15px;padding:14px" id="manualSaveBtn" onclick="saveManualEntry()">✓ СОХРАНИТЬ В БАЗУ</button>
+      <div id="manualSaveStatus" style="font-size:13px;font-family:'IBM Plex Mono',monospace;text-align:center;display:none"></div>
+    </div>
+  </div>
+
+  <div class="section-title">🤖 Загрузить через AI</div>
+  <div class="info-bar">
+    Загружай скриншоты — AI вытащит данные автоматически. <strong>Лимит: 50 запросов/мин</strong> для новых аккаунтов.
+  </div>
+
+  <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+    <div class="upload-icon">📷</div>
+    <p>Нажми чтобы выбрать скриншоты</p>
+    <button class="btn secondary" style="pointer-events:none">Выбрать файлы</button>
+  </div>
+  <input type="file" id="fileInput" multiple accept="image/*" onchange="handleFiles(this.files)">
+
+  <div id="queueContainer"></div>
+
+  <div id="processControls" style="display:none; gap:8px; flex-direction:column">
+    <div class="progress-bar" id="progressBar" style="display:none">
+      <div class="progress-fill" id="progressFill" style="width:0%"></div>
+    </div>
+    <button class="btn" id="processBtn" onclick="processQueue()" style="width:100%">
+      ▶ Обработать через AI
+    </button>
+  </div>
+</div>
+
+<!-- DB -->
+<div class="page" id="page-db">
+  <div class="filter-row">
+    <input type="text" id="dbFilter" placeholder="Фильтр по машине..." oninput="renderDB()">
+    <button class="btn danger" onclick="clearDB()" style="padding:8px 12px; font-size:11px">ОЧИСТИТЬ</button>
+  </div>
+  <div id="dbContainer"></div>
+</div>
+
+<!-- SETTINGS -->
+<div class="page" id="page-settings">
+  <div class="settings-block">
+    <h3>API Ключ Anthropic</h3>
+    <p>Без ключа AI не будет работать. Ключ хранится только на твоём телефоне.</p>
+    <p>Получить: <strong>console.anthropic.com</strong></p>
+    <input type="password" id="apiKeyInput" placeholder="sk-ant-..." style="margin-bottom:8px">
+    <button class="btn" onclick="saveKey()" style="width:100%">Сохранить ключ</button>
+    <div class="key-display" id="keyStatus"></div>
+  </div>
+
+  <div class="settings-block">
+    <h3>Cloudinary (хранение фото)</h3>
+    <p>Фото автоматически загружаются в Cloudinary. Бесплатно, без лимитов.</p>
+    <div class="key-display" style="color:var(--success)">✓ Подключено: dbbrnrafu</div>
+  </div>
+
+  <div class="settings-block">
+    <p>Скачай базу данных как JSON файл — на случай backup.</p>
+    <button class="btn secondary" onclick="exportDB()" style="width:100%">📥 Скачать базу</button>
+  </div>
+
+  <div class="settings-block">
+    <h3>Импорт базы</h3>
+    <p>Восстанови ранее сохранённую базу.</p>
+    <input type="file" id="importFile" accept=".json" onchange="importDB(this)" style="display:none">
+    <button class="btn secondary" onclick="document.getElementById('importFile').click()" style="width:100%">📤 Загрузить базу</button>
+  </div>
+</div>
+
+<script>
+// ─── STORAGE ────────────────────────────────────────────────────────────────
+
+const STORAGE_KEY = 'junkyard_db_v2';
+const API_KEY_STORAGE = 'junkyard_api_key';
+
+function getDB() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
+  catch { return []; }
+}
+
+function saveDB(data) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  updateCount();
+}
+
+function getApiKey() {
+  return localStorage.getItem(API_KEY_STORAGE) || '';
+}
+
+function updateCount() {
+  const db = getDB();
+  document.getElementById('totalCount').textContent = db.length;
+}
+
+// ─── TABS ────────────────────────────────────────────────────────────────────
+
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach((t, i) => {
+    t.classList.toggle('active', ['search','upload','db','settings'][i] === name);
+  });
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  if (name === 'db') renderDB();
+}
+
+async function testGoogleAuth() {
+  const status = document.getElementById('googleAuthStatus');
+  try {
+    status.textContent = '⏳ Авторизация...';
+    status.style.color = 'var(--accent)';
+    await getGoogleToken();
+    status.textContent = '✓ Google Drive подключён!';
+    status.style.color = 'var(--success)';
+  } catch(e) {
+    status.textContent = '✗ Ошибка: ' + e;
+    status.style.color = 'var(--danger)';
+  }
+}
+
+// ─── SETTINGS ────────────────────────────────────────────────────────────────
+
+function saveKey() {
+  const key = document.getElementById('apiKeyInput').value.trim();
+  if (!key.startsWith('sk-ant-')) {
+    document.getElementById('keyStatus').style.color = '#e03c3c';
+    document.getElementById('keyStatus').textContent = '⚠ Ключ должен начинаться с sk-ant-';
+    return;
+  }
+  localStorage.setItem(API_KEY_STORAGE, key);
+  document.getElementById('keyStatus').style.color = '#3ce07a';
+  document.getElementById('keyStatus').textContent = '✓ Ключ сохранён: ' + key.substring(0, 12) + '...';
+  document.getElementById('apiKeyInput').value = '';
+}
+
+function loadKeyStatus() {
+  const key = getApiKey();
+  if (key) {
+    document.getElementById('keyStatus').style.color = '#3ce07a';
+    document.getElementById('keyStatus').textContent = '✓ Ключ: ' + key.substring(0, 12) + '...';
+  }
+}
+
+// ─── MANUAL ENTRY ────────────────────────────────────────────────────────────
+
+let manualImgBase64 = null;
+let manualImgType = null;
+let manualImgFile = null;
+
+function previewManualImg(input) {
+  const file = input.files[0];
+  if (!file) return;
+  manualImgBase64 = null;
+  manualImgFile = file;
+
+  const img = new Image();
+  const url = URL.createObjectURL(file);
+  img.onload = () => {
+    URL.revokeObjectURL(url);
+    const canvas = document.createElement('canvas');
+    let w = img.width, h = img.height;
+    const maxW = 400; // Small = ~40KB per image
+    if (w > maxW) { h = Math.round(h * maxW / w); w = maxW; }
+    canvas.width = w; canvas.height = h;
+    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.4);
+    document.getElementById('manualImgThumb').src = dataUrl;
+    document.getElementById('manualImgPreview').style.display = 'block';
+    manualImgBase64 = dataUrl;
+  };
+  img.src = url;
+}
+
+// ─── CLOUDINARY ──────────────────────────────────────────────────────────────
+
+const CLOUDINARY_CLOUD = 'dbbrnrafu';
+const CLOUDINARY_API_KEY = '784444598272258';
+const CLOUDINARY_API_SECRET = '2_Xw8IhiItPLrCIqJPE69VMQ8M';
+
+async function uploadToCloudinary(dataUrl) {
+  const base64 = dataUrl.split(',')[1];
+  const timestamp = Math.round(Date.now() / 1000);
+  
+  // Generate signature
+  const str = `timestamp=${timestamp}${CLOUDINARY_API_SECRET}`;
+  const signature = await sha1(str);
+  
+  const formData = new FormData();
+  formData.append('file', dataUrl);
+  formData.append('api_key', CLOUDINARY_API_KEY);
+  formData.append('timestamp', timestamp);
+  formData.append('signature', signature);
+
+  const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, {
+    method: 'POST',
+    body: formData
+  });
+  
+  const data = await res.json();
+  if (data.secure_url) return data.secure_url;
+  throw new Error(data.error?.message || 'Cloudinary upload failed');
+}
+
+async function sha1(str) {
+  const buffer = new TextEncoder().encode(str);
+  const hash = await crypto.subtle.digest('SHA-1', buffer);
+  return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function saveManualEntry() {
+  const car = (document.getElementById('manualCar').value || '').trim();
+  const part = (document.getElementById('manualPart').value || '').trim();
+  const price = (document.getElementById('manualPrice').value || '').trim();
+  const note = (document.getElementById('manualNote').value || '').trim();
+  const status = document.getElementById('manualSaveStatus');
+  const btn = document.getElementById('manualSaveBtn');
+
+  status.style.display = 'block';
+
+  if (!car || !part) {
+    status.style.color = 'var(--danger)';
+    status.textContent = '⚠ Заполни машину и запчасть!';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = '⏳ Сохраняю...';
+
+  let finalImgData = null;
+  if (manualImgBase64) {
+    try {
+      status.style.display = 'block';
+      status.style.color = 'var(--accent)';
+      status.textContent = '📤 Загружаю фото...';
+      finalImgData = await uploadToCloudinary(manualImgBase64);
+    } catch(e) {
+      finalImgData = manualImgBase64; // fallback local
+    }
+  }
+
+  try {
+    const db = getDB();
+    const existing = db.find(d => d.car.toLowerCase() === car.toLowerCase());
+
+    if (existing) {
+      existing.parts.push({ part, price, note, img: finalImgData });
+    } else {
+      db.push({ id: Date.now() + Math.random(), car, parts: [{ part, price, note, img: finalImgData }] });
+    }
+
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
+    updateCount();
+
+    document.getElementById('manualCar').value = '';
+    document.getElementById('manualPart').value = '';
+    document.getElementById('manualPrice').value = '';
+    document.getElementById('manualNote').value = '';
+    document.getElementById('manualImgPreview').style.display = 'none';
+    document.getElementById('manualImgInput').value = '';
+    manualImgBase64 = null;
+    manualImgFile = null;
+
+    btn.disabled = false;
+    btn.textContent = '✓ СОХРАНИТЬ В БАЗУ';
+    status.style.color = 'var(--success)';
+    status.textContent = '✓ Сохранено: ' + car + ' — ' + part;
+    setTimeout(() => { status.style.display = 'none'; }, 3000);
+
+  } catch(e) {
+    btn.disabled = false;
+    btn.textContent = '✓ СОХРАНИТЬ В БАЗУ';
+    status.style.color = 'var(--danger)';
+    status.textContent = '✗ Ошибка: ' + e.message;
+  }
+}
+
+// ─── UPLOAD ──────────────────────────────────────────────────────────────────
+
+let uploadQueue = [];
+
+function handleFiles(files) {
+  Array.from(files).forEach(file => {
+    uploadQueue.push({ file, status: 'pending', id: Date.now() + Math.random() });
+  });
+  renderQueue();
+  document.getElementById('processControls').style.display = 'flex';
+}
+
+function renderQueue() {
+  const container = document.getElementById('queueContainer');
+  if (uploadQueue.length === 0) { container.innerHTML = ''; return; }
+
+  container.innerHTML = `<div class="section-title">${uploadQueue.length} файлов в очереди</div>` +
+    uploadQueue.map((item, i) => `
+      <div class="queue-item" id="qi-${i}">
+        <img class="thumb" src="${URL.createObjectURL(item.file)}" />
+        <div class="info">
+          <div class="filename">${item.file.name}</div>
+          <div class="status status-${item.status}">${statusLabel(item.status)}${item.errorMsg ? '<br><span style="font-size:10px">' + item.errorMsg + '</span>' : ''}</div>
+        </div>
+      </div>
+    `).join('');
+}
+
+function statusLabel(s) {
+  return { pending: '⏳ Ожидает', processing: '🔄 Обрабатывается...', done: '✓ Добавлено в базу', error: '✗ Ошибка' }[s] || s;
+}
+
+async function processQueue() {
+  const key = getApiKey();
+  if (!key) {
+    alert('Сначала добавь API ключ во вкладке ⚙️ API');
+    switchTab('settings');
+    return;
+  }
+
+  const btn = document.getElementById('processBtn');
+  const progressBar = document.getElementById('progressBar');
+  const progressFill = document.getElementById('progressFill');
+  btn.disabled = true;
+  progressBar.style.display = 'block';
+
+  const pending = uploadQueue.filter(i => i.status === 'pending');
+
+  for (let idx = 0; idx < pending.length; idx++) {
+    const item = pending[idx];
+    item.status = 'processing';
+    renderQueue();
+
+    progressFill.style.width = ((idx / pending.length) * 100) + '%';
+
+    try {
+      const base64 = await fileToBase64(item.file);
+      const mediaType = item.file.type || 'image/jpeg';
+      const result = await analyzeScreenshot(base64, key, mediaType);
+      if (result && result.length > 0) {
+        // Upload to Cloudinary
+        let imgUrl = null;
+        try {
+          const dataUrl = 'data:' + mediaType + ';base64,' + base64;
+          imgUrl = await uploadToCloudinary(dataUrl);
+        } catch(e) {
+          imgUrl = await getCompressedThumb(base64);
+        }
+        addToDB(result, imgUrl, false);
+        item.status = 'done';
+      } else {
+        item.status = 'error';
+        item.errorMsg = 'Не удалось распознать данные';
+      }
+    } catch (e) {
+      item.status = 'error';
+      item.errorMsg = e.message;
+      console.error(e);
+    }
+    renderQueue();
+    await sleep(8000);
+  }
+
+  progressFill.style.width = '100%';
+  btn.disabled = false;
+  btn.textContent = '✓ Готово! Обработать ещё';
+  updateCount();
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result.split(',')[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+function fileToBase64Compressed(file, maxSizeMB = 4) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const canvas = document.createElement('canvas');
+      let w = img.width, h = img.height;
+      // Scale down if needed
+      const maxDim = 1920;
+      if (w > maxDim || h > maxDim) {
+        if (w > h) { h = Math.round(h * maxDim / w); w = maxDim; }
+        else { w = Math.round(w * maxDim / h); h = maxDim; }
+      }
+      canvas.width = w;
+      canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      // Compress to stay under 4MB
+      let quality = 0.85;
+      let result = canvas.toDataURL('image/jpeg', quality).split(',')[1];
+      while (result.length * 0.75 > maxSizeMB * 1024 * 1024 && quality > 0.3) {
+        quality -= 0.1;
+        result = canvas.toDataURL('image/jpeg', quality).split(',')[1];
+      }
+      resolve(result);
+    };
+    img.onerror = reject;
+    img.src = url;
+  });
+}
+
+async function analyzeScreenshot(base64, apiKey, mediaType = 'image/jpeg') {
+  const prompt = `Ты анализируешь скриншоты из TikTok/соцсетей о бизнесе на junkyard — люди снимают запчасти с машин и продают на eBay.
+
+Извлеки из скриншота:
+1. Марку, модель и год машины
+2. Название запчасти (как написано/упомянуто)
+3. Цену продажи на eBay (если указана)
+4. Любые заметки (состояние, спрос, советы)
+
+Ответь ТОЛЬКО в формате JSON массива (без markdown, без пояснений):
+[
+  {
+    "car": "Honda Accord 2008",
+    "part": "Alternator",
+    "price": "$45-65",
+    "note": "Быстро продаётся"
+  }
+]
+
+Если на скриншоте несколько запчастей или машин — верни несколько объектов.
+Если информацию извлечь невозможно — верни пустой массив [].`;
+
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify({
+      model: 'claude-opus-4-5',
+      max_tokens: 1000,
+      messages: [{
+        role: 'user',
+        content: [
+          { type: 'image', source: { type: 'base64', media_type: mediaType, data: base64 } },
+          { type: 'text', text: prompt }
+        ]
+      }]
+    })
+  });
+
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error?.message || 'API Error');
+
+  const text = data.content[0].text.trim();
+  
+  // Try to extract JSON array from anywhere in the response
+  let clean = text.replace(/```json|```/g, '').trim();
+  
+  // Find JSON array in text
+  const arrayMatch = clean.match(/\[[\s\S]*\]/);
+  if (arrayMatch) {
+    clean = arrayMatch[0];
+  }
+  
+  try {
+    return JSON.parse(clean);
+  } catch(e) {
+    // If still fails, return empty array instead of crashing
+    console.warn('Could not parse:', clean);
+    return [];
+  }
+}
+
+function addToDB(entries, imgUrl, isBase64) {
+  const db = getDB();
+  entries.forEach(entry => {
+    if (!entry.car || !entry.part) return;
+    const imgData = imgUrl || null;
+    const existing = db.find(d => d.car.toLowerCase() === entry.car.toLowerCase());
+    if (existing) {
+      const partExists = existing.parts.find(p => p.part.toLowerCase() === entry.part.toLowerCase());
+      if (!partExists) existing.parts.push({ part: entry.part, price: entry.price || '', note: entry.note || '', img: imgData });
+    } else {
+      db.push({
+        id: Date.now() + Math.random(),
+        car: entry.car,
+        parts: [{ part: entry.part, price: entry.price || '', note: entry.note || '', img: imgData }]
+      });
+    }
+  });
+  saveDB(db);
+}
+
+async function getCompressedThumb(base64) {
+  return new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      let w = img.width, h = img.height;
+      if (w > 400) { h = Math.round(h * 400 / w); w = 400; }
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      resolve(canvas.toDataURL('image/jpeg', 0.4));
+    };
+    img.onerror = () => resolve(null);
+    img.src = 'data:image/jpeg;base64,' + base64;
+  });
+}
+
+// ─── SEARCH BY PHOTO ─────────────────────────────────────────────────────────
+
+async function searchByPhoto(input) {
+  const file = input.files[0];
+  if (!file) return;
+
+  const key = getApiKey();
+  if (!key) {
+    alert('Сначала добавь API ключ во вкладке ⚙️ API');
+    switchTab('settings');
+    return;
+  }
+
+  // Show preview
+  const preview = document.getElementById('photoPreview');
+  const photoImg = document.getElementById('photoImg');
+  const photoStatus = document.getElementById('photoStatus');
+  preview.style.display = 'block';
+  photoImg.src = URL.createObjectURL(file);
+  photoStatus.textContent = '🔄 Определяю машину...';
+
+  const resultsDiv = document.getElementById('searchResults');
+  resultsDiv.innerHTML = `<div class="ai-thinking"><div class="spinner"></div>Определяю марку и модель...</div>`;
+
+  try {
+    const base64 = await fileToBase64Compressed(file);
+    const mediaType = 'image/jpeg';
+
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 200,
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'image', source: { type: 'base64', media_type: mediaType, data: base64 } },
+            { type: 'text', text: 'Определи марку, модель и год этого автомобиля. Ответь ТОЛЬКО в формате: "Марка Модель Год" например "Honda Accord 2008" или "Chevrolet Silverado 2003". Если не можешь определить точно — дай наиболее вероятный вариант. Только название, без пояснений.' }
+          ]
+        }]
+      })
+    });
+
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error?.message);
+
+    const carName = data.content[0].text.trim();
+    photoStatus.textContent = '✓ ' + carName;
+    document.getElementById('carQuery').value = carName;
+
+    // Auto search
+    await searchCar();
+
+  } catch(e) {
+    photoStatus.textContent = '✗ Ошибка: ' + e.message;
+    resultsDiv.innerHTML = '';
+  }
+
+  input.value = '';
+}
+
+// ─── SEARCH ──────────────────────────────────────────────────────────────────
+
+async function searchCar() {
+  const query = document.getElementById('carQuery').value.trim();
+  if (!query) return;
+
+  const key = getApiKey();
+  if (!key) {
+    alert('Сначала добавь API ключ во вкладке ⚙️ API');
+    switchTab('settings');
+    return;
+  }
+
+  const resultsDiv = document.getElementById('searchResults');
+  resultsDiv.innerHTML = `<div class="ai-thinking"><div class="spinner"></div>Ищу в базе и анализирую...</div>`;
+
+  const db = getDB();
+
+  // Smart matching — требует совпадения и марки и модели
+  const queryLow = query.toLowerCase();
+  const queryWords = queryLow.split(/\s+/).filter(w => w.length > 2);
+
+  const matches = db.filter(d => {
+    const carLow = d.car.toLowerCase();
+    // Exact or near-exact match
+    if (carLow.includes(queryLow) || queryLow.includes(carLow)) return true;
+    // Match by at least 2 words (brand + model)
+    const matchedWords = queryWords.filter(w => carLow.includes(w));
+    return matchedWords.length >= 2;
+  });
+
+  // Build context from DB
+  let dbContext = '';
+  if (matches.length > 0) {
+    dbContext = 'Из базы данных (скриншоты из TikTok):\n';
+    matches.forEach(m => {
+      dbContext += `\n${m.car}:\n`;
+      m.parts.forEach(p => {
+        dbContext += `  - ${p.part}: ${p.price} ${p.note ? '(' + p.note + ')' : ''}\n`;
+      });
+    });
+  } else {
+    dbContext = 'В базе нет точных совпадений по этой машине.';
+  }
+
+  const allCars = db.length > 0
+    ? 'Всего в базе машин: ' + db.length
+    : 'База пока пуста.';
+
+  const prompt = `Ты помощник Вадима — он снимает запчасти на junkyard и продаёт на eBay через магазин vkmotors.us. Ты знаешь его бизнес досконально.
+
+СПЕЦИАЛИЗАЦИЯ ВАДИМА — только мелкие запчасти которые отправляются почтой (USPS/FedEx). Всё влезает в коробку, до 10кг.
+
+ЧТО ВАДИМ ПРОДАЁТ И ПО КАКИМ ЦЕНАМ (из реального ассортимента):
+
+ЭЛЕКТРОНИКА И УПРАВЛЕНИЕ:
+- Навигация/Radio/GPS unit — $149-499
+- Климат контроль / AC панель — $89-219
+- iDrive/NBT головной блок — $99-499
+- Усилитель Harman Kardon / Mark Levinson / Logic 7 — $129-499
+- TPMS модуль / RDC антенна — $69-99
+- Clock spring / рулевой модуль — $99-249
+- Fuse box — $129-199
+- AC amplifier module — $69-149
+
+ОПТИКА:
+- Xenon/HID фары в сборе (BMW, Lexus) — $249-999
+- Обычные фары — $99-299
+- Задние фонари — $79-199
+- Headlight module отдельно — $99-249
+
+САЛОН И ТРИМ:
+- Gear shifter / селектор АКПП — $99-399
+- Рулевое колесо (спортивное, с подогревом, paddle shift) — $299-599
+- Безель/трим центральной консоли — $79-220
+- Безель radio/nav — $79-219
+- Air vent / дефлектор — $39-129
+- Armrest / подлокотник центральный — $59-199
+- Overhead console — $129-164
+- Door panel trim — $99-248
+- Glove box — $99-139
+- Sun visor — $89-129
+- Headrest кожаный — $99-199
+- Interior door handle — $39-79
+- Seat belt retractor — $89-149
+- Wood/carbon trim set — $199-399
+
+ЗАМКИ И МОТОРЧИКИ:
+- Door lock actuator — $89-169
+- Liftgate/trunk lock actuator — $99-169
+- Window regulator with motor — $99-199
+- Window switch master — $59-108
+- Turn signal/wiper switch — $69-149
+- Wiper motor — $59-99
+- Side mirror power — $89-199
+- Fender flare / молдинг — $79-199
+
+ПРИОРИТЕТНЫЕ МАРКИ ПО ОПЫТУ (но не ограничение!):
+Lexus: RX300/330/350/450h, GX470, IS250/350, GS350, LS460, LX470, ES300/330
+Toyota: Sequoia, Tundra, Highlander, 4Runner, Land Cruiser, Camry, Sienna, Celica, Solara, RAV4
+BMW: E46, E60, E90/E92, F10, F15/X5, F16/X6, X3
+Mercedes, Volvo, Honda, Nissan, Buick, Cadillac, Lincoln, Jaguar, Chevy GMC, Ford и ЛЮБЫЕ ДРУГИЕ марки — если запчасть стоит денег, Вадим её возьмёт.
+
+ГЛАВНЫЙ ПРИНЦИП: марка не важна — важна цена запчасти на eBay. Даже на редкой или бюджетной машине может быть дорогая деталь.
+
+ВАЖНЫЕ НЮАНСЫ:
+- Цвет/трим влияет на цену — уточни цвет (beige/tan/gray/black/brown)
+- Xenon/HID фары стоят в 3-4 раза дороже обычных
+- Premium аудио (Harman Kardon, Mark Levinson, Logic 7) — всегда бери
+- Спортивный руль с paddle shift — дороже обычного в 3 раза
+- Кожаный салон — armrest и headrest стоят дороже
+
+НЕ ИНТЕРЕСУЕТ: двигатели, коробки, кузов, большие стёкла, сиденья целиком, бамперы.
+
+Человек стоит перед машиной: "${query}"
+
+${dbContext}
+
+${allCars}
+
+Скажи Вадиму конкретно:
+1. Что снять — в порядке приоритета (самое дорогое и ходовое первым)
+2. Реальная цена на eBay за каждую запчасть
+3. На что обратить внимание (цвет, комплектация, состояние)
+
+Отвечай по-русски. Чётко и по делу.`;
+
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error?.message || 'API Error');
+
+    const answer = data.content[0].text;
+
+    let html = '';
+    if (matches.length > 0) {
+      html += `<div class="section-title">📦 Из твоей базы (${matches.length} совпадений)</div>`;
+      matches.forEach(m => {
+        html += `<div class="result-card">
+          <div class="car-name">${m.car}</div>
+          <ul class="parts-list">
+            ${m.parts.map((p, pi) => `
+              <li style="flex-direction:column;align-items:flex-start;gap:6px">
+                <div style="display:flex;justify-content:space-between;width:100%;align-items:center">
+                  <div>
+                    <div class="part-name">${p.part}</div>
+                    ${p.note ? `<div class="part-note">${p.note}</div>` : ''}
+                  </div>
+                  <div class="part-price">${p.price || '—'}</div>
+                </div>
+                ${p.img ? `
+                  <div style="width:100%">
+                    <div onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'" 
+                         style="font-size:11px;color:var(--accent);font-family:'IBM Plex Mono',monospace;cursor:pointer;padding:4px 0">
+                      📷 Показать скриншот ▾
+                    </div>
+                    <img src="${p.img}" style="display:none;width:100%;border-radius:6px;max-height:220px;object-fit:cover;margin-top:4px">
+                  </div>
+                ` : ''}
+              </li>
+            `).join('')}
+          </ul>
+        </div>`;
+      });
+    }
+
+    html += `<div class="section-title">🤖 AI рекомендация</div>
+      <div class="ai-response">${answer}</div>`;
+
+    resultsDiv.innerHTML = html;
+
+  } catch (e) {
+    resultsDiv.innerHTML = `<div class="ai-response" style="border-left-color: var(--danger)">Ошибка: ${e.message}</div>`;
+  }
+}
+
+// Enter key support
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('carQuery').addEventListener('keydown', e => {
+    if (e.key === 'Enter') searchCar();
+  });
+  loadKeyStatus();
+  updateCount();
+});
+
+// ─── DB PAGE ─────────────────────────────────────────────────────────────────
+
+function renderDB() {
+  const db = getDB();
+  const filter = document.getElementById('dbFilter')?.value.toLowerCase() || '';
+  const filtered = filter ? db.filter(d => d.car.toLowerCase().includes(filter)) : db;
+  const container = document.getElementById('dbContainer');
+
+  if (filtered.length === 0) {
+    container.innerHTML = `<div class="empty"><div class="icon">📦</div>${db.length === 0 ? 'База пуста. Загрузи скриншоты!' : 'Ничего не найдено'}</div>`;
+    return;
+  }
+
+  container.innerHTML = filtered.map((entry, i) => `
+    <div class="db-entry">
+      <div class="db-entry-header" onclick="toggleEntry(${i})">
+        <div>
+          <div class="car">${entry.car}</div>
+          <div class="meta">${entry.parts.length} запчастей</div>
+        </div>
+        <button class="delete-btn" onclick="event.stopPropagation(); deleteEntry('${entry.id}')">🗑</button>
+      </div>
+      <div class="db-entry-body" id="entry-${i}">
+        ${entry.parts.map(p => `
+          <div class="part-row" style="flex-direction:column; align-items:flex-start; gap:8px">
+            ${p.img ? `<img src="${p.img}" style="width:100%;border-radius:6px;max-height:200px;object-fit:cover">` : ''}
+            <div style="display:flex;justify-content:space-between;width:100%;align-items:center">
+              <div>${p.part}${p.note ? '<br><span style="font-size:11px;color:var(--text2)">' + p.note + '</span>' : ''}</div>
+              <div style="color:var(--success);font-family:'IBM Plex Mono',monospace;font-size:12px;white-space:nowrap;margin-left:8px">${p.price || '—'}</div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+function toggleEntry(i) {
+  const el = document.getElementById('entry-' + i);
+  el.classList.toggle('open');
+}
+
+function deleteEntry(id) {
+  if (!confirm('Удалить запись?')) return;
+  const db = getDB().filter(d => String(d.id) !== String(id));
+  saveDB(db);
+  renderDB();
+}
+
+function clearDB() {
+  if (!confirm('Очистить всю базу? Это нельзя отменить.')) return;
+  saveDB([]);
+  renderDB();
+}
+
+// ─── EXPORT / IMPORT ─────────────────────────────────────────────────────────
+
+function exportDB() {
+  const db = getDB();
+  const blob = new Blob([JSON.stringify(db, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'junkyard_db_' + new Date().toISOString().split('T')[0] + '.json';
+  a.click();
+}
+
+function importDB(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!Array.isArray(data)) throw new Error('Неверный формат');
+      const current = getDB();
+      const merged = [...current];
+      data.forEach(entry => {
+        const exists = merged.find(d => d.car.toLowerCase() === entry.car.toLowerCase());
+        if (exists) {
+          entry.parts.forEach(p => {
+            if (!exists.parts.find(ep => ep.part.toLowerCase() === p.part.toLowerCase())) {
+              exists.parts.push(p);
+            }
+          });
+        } else {
+          merged.push(entry);
+        }
+      });
+      saveDB(merged);
+      renderDB();
+      alert('Импорт успешен! Добавлено записей: ' + data.length);
+    } catch (err) {
+      alert('Ошибка импорта: ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+}
+</script>
+</body>
+</html>

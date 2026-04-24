@@ -468,26 +468,55 @@
 </div>
 
 <script>
-const STORAGE_KEY = 'junkyard_db_v2';
 const API_KEY_STORAGE = 'junkyard_api_key';
+let _idb = null;
 
-function getDB() {
-  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
-  catch { return []; }
+function openIDB() {
+  if (_idb) return Promise.resolve(_idb);
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open('junkyard_pro', 2);
+    req.onupgradeneeded = e => {
+      const db = e.target.result;
+      if (!db.objectStoreNames.contains('cars')) {
+        db.createObjectStore('cars', { keyPath: 'id' });
+      }
+    };
+    req.onsuccess = e => { _idb = e.target.result; resolve(_idb); };
+    req.onerror = () => reject(req.error);
+  });
 }
 
-function saveDB(data) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-  updateCount();
+async function getDB() {
+  const db = await openIDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('cars', 'readonly');
+    const req = tx.objectStore('cars').getAll();
+    req.onsuccess = () => resolve(req.result || []);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function saveDB(data) {
+  const db = await openIDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('cars', 'readwrite');
+    const store = tx.objectStore('cars');
+    store.clear();
+    data.forEach(item => store.put(item));
+    tx.oncomplete = async () => { await updateCount(); resolve(); };
+    tx.onerror = () => reject(tx.error);
+  });
 }
 
 function getApiKey() {
   return localStorage.getItem(API_KEY_STORAGE) || '';
 }
 
-function updateCount() {
-  const db = getDB();
-  document.getElementById('totalCount').textContent = db.length;
+async function updateCount() {
+  try {
+    const db = await getDB();
+    document.getElementById('totalCount').textContent = db.length;
+  } catch(e) {}
 }
 
 function switchTab(name) {
@@ -567,7 +596,7 @@ async function saveManualEntry() {
   btn.textContent = '⏳ Сохраняю...';
 
   try {
-    const db = getDB();
+    const db = await getDB();
     const existing = db.find(d => d.car.toLowerCase() === car.toLowerCase());
 
     if (existing) {
@@ -576,7 +605,7 @@ async function saveManualEntry() {
       db.push({ id: Date.now() + Math.random(), car, parts: [{ part, price, note, img: manualImgBase64 || null }] });
     }
 
-    saveDB(db);
+    await saveDB(db);
 
     document.getElementById('manualCar').value = '';
     document.getElementById('manualPart').value = '';
@@ -662,7 +691,7 @@ async function processQueue() {
       if (result && result.length > 0) {
         // Сохраняем фото локально (сжатый thumb)
         const imgData = await getCompressedThumb(base64);
-        addToDB(result, imgData);
+        await addToDB(result, imgData);
         item.status = 'done';
       } else {
         item.status = 'error';
@@ -793,8 +822,8 @@ async function analyzeScreenshot(base64, apiKey, mediaType = 'image/jpeg') {
   catch(e) { console.warn('Could not parse:', clean); return []; }
 }
 
-function addToDB(entries, imgData) {
-  const db = getDB();
+async function addToDB(entries, imgData) {
+  const db = await getDB();
   entries.forEach(entry => {
     if (!entry.car || !entry.part) return;
     const existing = db.find(d => d.car.toLowerCase() === entry.car.toLowerCase());
@@ -887,7 +916,7 @@ async function searchCar() {
   const resultsDiv = document.getElementById('searchResults');
   resultsDiv.innerHTML = `<div class="ai-thinking"><div class="spinner"></div>Ищу в базе и анализирую...</div>`;
 
-  const db = getDB();
+  const db = await getDB();
   const queryLow = query.toLowerCase();
   const queryWords = queryLow.split(/\s+/).filter(w => w.length > 2);
 
@@ -1044,8 +1073,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // ─── DB PAGE ─────────────────────────────────────────────────────────────────
 
-function renderDB() {
-  const db = getDB();
+async function renderDB() {
+  const db = await getDB();
   const filter = document.getElementById('dbFilter')?.value.toLowerCase() || '';
   const filtered = filter ? db.filter(d => d.car.toLowerCase().includes(filter)) : db;
   const container = document.getElementById('dbContainer');
@@ -1084,23 +1113,23 @@ function toggleEntry(i) {
   el.classList.toggle('open');
 }
 
-function deleteEntry(id) {
+async function deleteEntry(id) {
   if (!confirm('Удалить запись?')) return;
-  const db = getDB().filter(d => String(d.id) !== String(id));
-  saveDB(db);
+  const db = await getDB();
+  await saveDB(db.filter(d => String(d.id) !== String(id)));
   renderDB();
 }
 
-function clearDB() {
+async function clearDB() {
   if (!confirm('Очистить всю базу? Это нельзя отменить.')) return;
-  saveDB([]);
+  await saveDB([]);
   renderDB();
 }
 
 // ─── EXPORT / IMPORT ─────────────────────────────────────────────────────────
 
-function exportDB() {
-  const db = getDB();
+async function exportDB() {
+  const db = await getDB();
   const blob = new Blob([JSON.stringify(db, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -1108,6 +1137,24 @@ function exportDB() {
   a.download = 'junkyard_db_' + new Date().toISOString().split('T')[0] + '.json';
   a.click();
   URL.revokeObjectURL(url);
+}
+
+async function compressImgForStorage(dataUrl) {
+  if (!dataUrl || !dataUrl.startsWith('data:')) return dataUrl;
+  return new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      let w = img.width, h = img.height;
+      // Max 500px wide for storage
+      if (w > 500) { h = Math.round(h * 500 / w); w = 500; }
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      resolve(canvas.toDataURL('image/jpeg', 0.5));
+    };
+    img.onerror = () => resolve(null);
+    img.src = dataUrl;
+  });
 }
 
 async function importDB(input) {
@@ -1123,36 +1170,34 @@ async function importDB(input) {
       return;
     }
 
-    // Нормализуем данные — фото хранятся локально, никакого Cloudinary
-    const normalized = data.map(entry => ({
-      id: entry.id || Date.now() + Math.random(),
-      car: entry.car || '',
-      parts: (entry.parts || []).map(p => ({
-        part: p.part || '',
-        price: p.price || '',
-        note: p.note || '',
-        img: p.img || null  // base64 или URL — сохраняем как есть
-      }))
-    })).filter(e => e.car && e.parts.length > 0);
+    const normalized = [];
+    for (const entry of data) {
+      if (!entry.car) continue;
+      const parts = [];
+      for (const p of (entry.parts || [])) {
+        const img = await compressImgForStorage(p.img);
+        parts.push({ part: p.part || '', price: p.price || '', note: p.note || '', img });
+      }
+      if (parts.length > 0) {
+        normalized.push({ id: entry.id || (Date.now() + Math.random()), car: entry.car, parts });
+      }
+    }
 
-    const existing = getDB();
-    let added = 0;
-
+    const existing = await getDB();
     normalized.forEach(newEntry => {
       const found = existing.find(e => e.car.toLowerCase() === newEntry.car.toLowerCase());
       if (found) {
         newEntry.parts.forEach(np => {
-          const partExists = found.parts.find(p => p.part.toLowerCase() === np.part.toLowerCase());
-          if (!partExists) { found.parts.push(np); added++; }
+          const exists = found.parts.find(p => p.part.toLowerCase() === np.part.toLowerCase());
+          if (!exists) found.parts.push(np);
         });
       } else {
         existing.push(newEntry);
-        added += newEntry.parts.length;
       }
     });
 
-    saveDB(existing);
-    alert(`Импорт успешен! Добавлено записей: ${normalized.length}`);
+    await saveDB(existing);
+    alert('Импорт успешен! Добавлено записей: ' + normalized.length);
 
   } catch(e) {
     alert('Ошибка импорта: ' + e.message);
